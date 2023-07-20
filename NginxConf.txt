@@ -1,0 +1,38 @@
+/etc/nginx/sites-enabled/graylog-lab.conf
+
+# generated 2023-07-13, Mozilla Guideline v5.7, nginx 1.17.7, OpenSSL 1.1.1k, intermediate configuration
+# https://ssl-config.mozilla.org/#server=nginx&version=1.17.7&config=intermediate&openssl=1.1.1k&guideline=5.7
+server {
+    server_name siem.lab.defencelogic.io;
+
+    location / {
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Server $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Graylog-Server-URL http://$server_name/;
+        proxy_pass http://127.0.0.1:9000;
+    }
+
+    listen [::]:443 ssl ipv6only=on; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/siem.lab.defencelogic.io/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/siem.lab.defencelogic.io/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+server {
+    if ($host = siem.lab.defencelogic.io) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+    listen 80 default_server;
+    listen [::]:80 default_server ipv6only=on;
+    server_name siem.lab.defencelogic.io;
+    return 404; # managed by Certbot
+
+
+}
+
