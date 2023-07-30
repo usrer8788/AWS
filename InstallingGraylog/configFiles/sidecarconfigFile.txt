@@ -1,0 +1,68 @@
+define ROOT C:\Program Files\nxlog
+Moduledir %ROOT%\modules
+CacheDir %ROOT%\data
+Pidfile %ROOT%\data\nxlog.pid
+SpoolDir %ROOT%\data
+LogFile %ROOT%\data\nxlog.log
+
+<Extension logrotate>
+    Module  xm_fileopå
+    <Schedule>
+        When    @daily
+        Exec    file_cycle('%ROOT%\data\nxlog.log', 7);
+     </Schedule>
+</Extension>
+
+<Extension gelfExt>
+  Module xm_gelf
+  # Avoid truncation of the short_message field to 64 characters.
+  ShortMessageLength 65536
+</Extension>
+
+<Input WindowsAudit>
+  Module im_msvistalog
+  SavePos True
+  PollInterval 1
+  ReadFromLast True
+  
+  Query <QueryList>\
+    <Query Id="0">\
+      <Select Path="Application">*[System[(EventID=1 or EventID=2 or  (EventID &gt;= 102 and EventID &lt;= 105)  or EventID=216 or EventID=300 or EventID=302 or  (EventID &gt;= 865 and EventID &lt;= 868)  or EventID=882 or EventID=903 or EventID=904 or  (EventID &gt;= 1000 and EventID &lt;= 1002)  or  (EventID &gt;= 2001 and EventID &lt;= 2006) )]]</Select>\
+      <Select Path="Security">*[System[(EventID=1102 or EventID=1104 or EventID=4624 or EventID=4625 or EventID=4634 or EventID=4635 or EventID=4648 or EventID=4657 or EventID=4672 or EventID=4697 or EventID=4698 or EventID=4699 or EventID=4700 or EventID=4702 or EventID=4720 or EventID=4728 or EventID=4732 or EventID=4738 or EventID=4740 or EventID=4756 or EventID=4767 or EventID=4769)]]</Select>\
+      <Select Path="Security">*[System[(EventID=4722 or EventID=4725 or EventID=4729 or EventID=4733 or EventID=4735 or EventID=4737 or EventID=4741 or EventID=4742 or EventID=4743 or EventID=4755 or EventID=4757 or EventID=4764 or EventID=4771 or EventID=4798 or EventID=4799 or EventID=4907 or EventID=6416)]]</Select>\
+      <Select Path="Security">*[System[(EventID=631 or EventID=634 or EventID=635 or EventID=638 or EventID=658 or EventID=662 or EventID=4727 or EventID=4730 or EventID=4731 or EventID=4734 or EventID=4754 or EventID=4758 or EventID=5140 or EventID=5145)]]</Select>\
+      <Select Path="System">*[System[(EventID=6 or EventID=19 or EventID=104 or EventID=219 or EventID=307 or  (EventID &gt;= 1125 and EventID &lt;= 1129)  or EventID=4624 or EventID=4625 or EventID=4688 or EventID=4697 or  (EventID &gt;= 7023 and EventID &lt;= 7026) )]]</Select>\
+      <Select Path="System">*[System[( (EventID &gt;= 7031 and EventID &lt;= 7036)  or EventID=7045 or EventID=9009)]]</Select>\
+      <Select Path="Microsoft-Windows-TerminalServices-LocalSessionManager/Operational">*[System[((EventID &gt;= 21 and EventID &lt;= 25)  or EventID=39 or EventID=40)]]</Select>\
+      <Select Path="Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational">*[System[(EventID=1149)]]</Select>\
+      <Select Path="Microsoft-Windows-TaskScheduler/Operational">*[System[( (EventID &gt;= 100 and EventID &lt;= 111)  or EventID=118 or EventID=119 or EventID=135 or  (EventID &gt;= 140 and EventID &lt;= 142)  or EventID=201 or EventID=203 or EventID=301 or EventID=322 or EventID=329 or EventID=332)]]</Select>\
+      <Select Path="Microsoft-Windows-PowerShell/Operational">*[System[(EventID=4104)]]</Select>\
+      <Select Path="Microsoft-Windows-WinRM/Operational">*[System[(EventID=169)]]</Select>\
+      <Select Path="Microsoft-Windows-WMI-Activity/Operational">*[System[(EventID=5857 or EventID=5858 or EventID=5860)]]</Select>\
+      <Select Path="Microsoft-Windows-Sysmon/Operational">*</Select>\
+    </Query>\
+  </QueryList>
+  
+  #custom fields
+  Exec $CustomerID = 'DL LAB';
+  Exec $LogLocation = 'LAB';
+  Exec $LogType = 'Desktop  ';
+  # Win 10 Desktop and DC as Domain Controller
+  Exec $Hostname = hostname_fqdn();
+</Input>
+
+<Output srvLoadBalancer>
+    Module om_tcp
+    Host siem.lab.defencelogic.io
+    Port 12210
+	OutputType  GELF_TCP
+	<Exec>
+	  # These fields are needed for Graylog
+	  $gl2_source_collector = '${sidecar.nodeId}';
+	  $collector_node_id = '${sidecar.nodeName}';
+	</Exec>
+</Output>
+
+<Route 1>
+    Path WindowsAudit => srvLoadBalancer
+</Route>

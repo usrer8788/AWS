@@ -212,7 +212,7 @@ Command: sudo nano graylog-lab.conf
 
 - This command opens the file `graylog-lab.conf` for editing using the `nano` text editor with superuser privileges.
 
-1. Go to <https://ssl-config.mozilla.org/#server=nginx&version=1.17.7&config=intermediate&openssl=1.1.1k&guideline=5.7> to fill out the 
+1. Go to <https://ssl-config.mozilla.org/#server=nginx&version=1.17.7&config=intermediate&openssl=1.1.1k&guideline=5.7> to fill out the
 
 Command: sudo system
 
@@ -272,7 +272,6 @@ The output during the `nginx -t` command is as follows:
 
 >
 
-
 HTTP conf server
 {
     listen 80 default_server;
@@ -285,16 +284,14 @@ HTTP conf server
       proxy_set_header X-Forwarded-Server $host;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header X-Graylog-Server-URL http://$server_name/;
-      proxy_pass       http://127.0.0.1:9000;
+      proxy_pass       <http://127.0.0.1:9000>;
     }
 }
-
-
 
 > Work on HTTPS after
     >
 email to use when tunning the command sudo certbot -d siem.lab.defencelogic.io
-soc@defencelogic.io
+<soc@defencelogic.io>
 
 #### Allocating an Elastic IP to the Graylog Server
 
@@ -314,16 +311,15 @@ soc@defencelogic.io
 
 ### Windows Domain Controller
 
-Password = 
+Password =
     dbQcjfRcfa!.lT@84CmXjcGj=LAJOYnM
 Ket file =
     /DlSIEM/Windows_Server_SiemLab.pem
-RdP file = 
+RdP file =
     /DlSIEM/WindowsServerLab.rdp
 
-> Create a Windows Server 2022 instance 
+> Create a Windows Server 2022 instance
     > Create a new security group for the Windows Hosts
-
 
 When creating another Elastic IP, I ran into this problem:
 
@@ -347,7 +343,6 @@ This was fixed by attaching a new internet gateway to the (DL-SIEM-LAB-VPC)
 
 ### Windows End-User Device
 
-
 ### Setup a VPN to connect to the windows host
 
 ### Windows DC
@@ -356,17 +351,15 @@ Setup as a domain controller
 
 Build a domain
 
-Setup static private IP 
+Setup static private IP
 
-Windows DC password 
+Windows DC password
   T(lJ2eP$iAm5cEhHt!%SSBzBsDJDtVwL
 
-
-Domain Controller Emergency Password 
+Domain Controller Emergency Password
     0J3susFuck1ngChr1$t
 
-
-### Windows 11 install 
+### Windows 11 install
 
 password
 
@@ -375,7 +368,62 @@ password
   yeetes
 
 #### Graylog sidecar instllation
-  1.2.x	3.2.5 or higher
 
+  1.2.x 3.2.5 or higher
 
   qemu-img convert -f qcow2 ubuntu-desktop-22.04.qcow2 -O vdi ubuntu-desktop-22.04.vdi
+
+### Sidecar configuration
+
+### Connecting the windows hosts
+
+1. Login to graylog
+2. Go to System/Sidecar
+3. Click on <Create or reuse a token for the graylog-sidecar user>
+4. Name it for the relevant system or whatever the fuck you want, it doesn't really matter
+5. Copy the API token, our is <crqt0tn415r9jdb7grp9vh16ptghakfbnr6v238crqg4fh9tmei>
+6. Point the host to our graylog siem <https://siem.lab.defencelogic.io>
+  *On the DC make sure the DNS records have been updated correctly by creating an A record for the Ubuntu Server IP <172.31.8.57> which will resolve to siem.lab.defencelogic.io*
+7. Click install once this is done
+8. To make sure the sidecar service is running, open CMD as admin
+9. Run the following command:
+
+> "C:\Program Files\graylog\sidecar\graylog-sidecar.exe" -service install
+> "C:\Program Files\graylog\sidecar\graylog-sidecar.exe" -service start
+
+10. Check the system/sidecar overview page to see if your hosts are logging correctly
+![Alt text](<Screenshot 2023-07-25 at 10.37.40.png>)
+
+### Configuration file
+
+**How to create a default configuration file that will be pushed to the windows hosts**
+
+1. Login to graylog
+2. Go to input
+3. select <beats>
+4. Name to whatever prefereable sidecar
+5. Go to system/sidecar
+6. Copy the nxlog configuration as a new configuration called WindowsDesktop
+7. Change the IP addresses and custom fields to be relevant
+8. Click update
+
+#### Windows Hosts
+
+Nxlog has changed from 32 bit to 64 bit, meaning the default collector binary on the sidecar.yml file is incorrect sp you will need to go an update to:
+
+```bash
+ collector_binaries_accesslist:
+#  - "C:\\Program Files\\Graylog\\sidecar\\filebeat.exe"
+#  - "C:\\Program Files\\Graylog\\sidecar\\winlogbeat.exe"
+#  - "C:\\Program Files\\Filebeat\\filebeat.exe"
+#  - "C:\\Program Files\\Packetbeat\\packetbeat.exe"
+#  - "C:\\Program Files\\Metricbeat\\metricbeat.exe"
+#  - "C:\\Program Files\\Heartbeat\\heartbeat.exe"
+#  - "C:\\Program Files\\Auditbeat\\auditbeat.exe"
+  - "C:\\Program Files\\nxlog\\nxlog.exe"
+  ```
+
+Now we need to download the community edition of nxlog. 
+Download it here
+
+Graylog configuration fiels
