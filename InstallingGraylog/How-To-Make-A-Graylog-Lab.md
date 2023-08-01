@@ -361,6 +361,8 @@ Domain Controller Emergency Password
 
 ### Windows 11 install
 
+Security questions for windows 10 box 
+
 password
 
   yeetus
@@ -426,4 +428,3 @@ Nxlog has changed from 32 bit to 64 bit, meaning the default collector binary on
 Now we need to download the community edition of nxlog. 
 Download it here
 
-Graylog configuration fiels
